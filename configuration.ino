@@ -23,6 +23,15 @@
     return EXIT_FAILURE; \
   }
 
+#define COPY_ARGS(start, end, dest, len) \
+  uint8_t pos = 0; \
+  memset(dest, 0, len); \
+  for(int i = start; i <= end; i++) { \
+    if(i > start) dest[pos++] = ' '; \
+    strncpy(&dest[pos], argv[i], len - pos); \
+    pos += strlen(argv[i]); \
+  }
+
 
 int cmd_getTime(int argc, char **argv) {
   updateTimestamp();
@@ -280,6 +289,75 @@ int cmd_moveSensor(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
+int cmd_getRemote(int argc, char **argv) {
+  if(config.remoteLogging) {
+    shell.println(F("Remote loggin is enabled."));
+  } else {
+    shell.println(F("Remote logging is disabled."));
+  }
+  return EXIT_SUCCESS;
+}
+
+int cmd_enableRemote(int argc, char **argv) {
+  config.remoteLogging = true;
+  shell.println(F("Remote logging enabled."));
+  return EXIT_SUCCESS;
+}
+
+int cmd_disableRemote(int argc, char **argv) {
+  config.remoteLogging = false;
+  shell.println(F("Remote logging disabled."));
+  return EXIT_SUCCESS;
+}
+
+int cmd_getLoggingUrl(int argc, char **argv) {
+  shell.println(config.loggingUrl);
+  return EXIT_SUCCESS;
+}
+
+int cmd_setLoggingUrl(int argc, char **argv) {
+  CHECK_ARGS(2, F("USAGE: setloggingurl [URL]"));
+  COPY_ARGS(1, argc - 1, config.loggingUrl, MAX_URL_LEN);
+  shell.println(config.loggingUrl);
+  return EXIT_SUCCESS;
+}
+
+int cmd_getGprsApn(int argc, char **argv) {
+  shell.println(config.gprsApn);
+  return EXIT_SUCCESS;
+}
+
+int cmd_setGprsApn(int argc, char **argv) {
+  CHECK_ARGS(2, F("USAGE: setgprsapn [GPRS APN]"));
+  COPY_ARGS(1, argc - 1, config.gprsApn, MAX_VALUE_LEN);
+  shell.println(config.gprsApn);
+  return EXIT_SUCCESS;
+}
+
+int cmd_getGprsUser(int argc, char **argv) {
+  shell.println(config.gprsUser);
+  return EXIT_SUCCESS;
+}
+
+int cmd_setGprsUser(int argc, char **argv) {
+  CHECK_ARGS(2, F("USAGE: setgprsuser [GPRS USERNAME]"));
+  COPY_ARGS(1, argc - 1, config.gprsUser, MAX_VALUE_LEN);
+  shell.println(config.gprsUser);
+  return EXIT_SUCCESS;
+}
+
+int cmd_getGprsPass(int argc, char **argv) {
+  shell.println(config.gprsPass);
+  return EXIT_SUCCESS;
+}
+
+int cmd_setGprsPass(int argc, char **argv) {
+  CHECK_ARGS(2, F("USAGE: setgprspass [GPRS PASSWORD]"));
+  COPY_ARGS(1, argc - 1, config.gprsPass, MAX_VALUE_LEN);
+  shell.println(config.gprsPass);
+  return EXIT_SUCCESS;
+}
+
 int cmd_config(int argc, char **argv) {
   shell.println(F("\n--------------------\n"));
   dumpConfig(shell);
@@ -326,6 +404,20 @@ void configuration_setup() {
   shell.addCommand(F("addsensor [SENSOR ADDRESS] [LABEL]\n\tAdd sensor with given address to configuration."), cmd_addSensor);
   shell.addCommand(F("removesensor [SENSOR ADDRESS]\n\tRemove sensor with given address from configuration."), cmd_removeSensor);
   shell.addCommand(F("movesensor [SENSOR ADDRESS] [POSITION]\n\tChange position of sensor with given address in configuration."), cmd_moveSensor);
+
+  shell.addCommand(F("getremote \n\tReturns whether or not remote logging is enabled."), cmd_getRemote);
+  shell.addCommand(F("enableremote \n\tEnable remote logging."), cmd_enableRemote);
+  shell.addCommand(F("disableremote \n\tDisable remote logging."), cmd_disableRemote);
+
+  shell.addCommand(F("getloggingurl \n\tReturns the remote logging url."), cmd_getLoggingUrl);
+  shell.addCommand(F("setloggingurl [URL]\n\tSets the remote logging url."), cmd_setLoggingUrl);
+
+  shell.addCommand(F("getgprsapn \n\tReturns the GPRS APN."), cmd_getGprsApn);
+  shell.addCommand(F("setgprsapn [GPRS APN]\n\tSets GPRS APN."), cmd_setGprsApn);
+  shell.addCommand(F("getgprsuser \n\tReturns the GPRS username."), cmd_getGprsUser);
+  shell.addCommand(F("setgprsuser [GPRS USERNAME]\n\tSets GPRS username."), cmd_setGprsUser);
+  shell.addCommand(F("getgprspass \n\tReturns the GPRS password."), cmd_getGprsPass);
+  shell.addCommand(F("setgprspass [GPRS PASSWORD]\n\tSets GPRS password."), cmd_setGprsPass);
 
   shell.addCommand(F("config \n\tDump current configuration to shell."), cmd_config);
   shell.addCommand(F("save \n\tSaves the current configuration."), cmd_save);

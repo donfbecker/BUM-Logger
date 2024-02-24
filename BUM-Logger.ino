@@ -11,6 +11,7 @@
 #include <RTCZero.h>
 
 #define MAX_VALUE_LEN 64
+#define MAX_URL_LEN 256
 
 struct SensorConfig {
   char label[MAX_VALUE_LEN];
@@ -24,6 +25,12 @@ struct StationConfig {
   uint32_t sensorCount;
   uint32_t interval;
   LinkedList<SensorConfig *> sensors;
+
+  bool remoteLogging;
+  char loggingUrl[MAX_URL_LEN];
+  char gprsApn[MAX_VALUE_LEN];
+  char gprsUser[MAX_VALUE_LEN];
+  char gprsPass[MAX_VALUE_LEN];
 };
 
 StationConfig config;
@@ -48,17 +55,23 @@ DeviceAddress addr;
 OneWire oneWire(ONE_WIRE_BUS);  
 DallasTemperature sensors(&oneWire);
 
+// Modem Serial
+HardwareSerial &serialGSM = Serial1;
+
 RTCZero rtc;
 
 void setup(void) {
   debugPinValue = analogRead(debugPin);
   configPinValue = analogRead(configPin);
-  
-  //USBDevice.attach();
-  Serial.begin(9600);
+
+  USBDevice.attach();
+  Serial.begin(115200);
   if(debugPinValue > 900 || configPinValue > 900) {
     while(!Serial) {}
   }
+
+  // Set GSM module baud rate
+  serialGSM.begin(115200);
   
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
@@ -147,6 +160,13 @@ void readConfig() {
 
     config.sensors.add(sensor);
   }
+
+  // Remote logging configuration
+  ini.getValue("station", "remote-logging", buffer, bufferLen, config.remoteLogging);
+  ini.getValue("remote", "url", config.loggingUrl, MAX_URL_LEN);
+  ini.getValue("remote", "gprs-apn", config.gprsApn, MAX_VALUE_LEN);
+  ini.getValue("remote", "gprs-user", config.gprsUser, MAX_VALUE_LEN);
+  ini.getValue("remote", "gprs-pass", config.gprsPass, MAX_VALUE_LEN);
 }
 
 void dumpConfig(Stream &out) {
@@ -157,6 +177,18 @@ void dumpConfig(Stream &out) {
   out.println(config.interval);
   out.print(F("sensors="));
   out.println(config.sensorCount);
+  out.print(F("remote-logging="));
+  out.println(config.remoteLogging);
+
+  out.println(F("\n[remote]"));
+  out.print(F("url="));
+  out.println(config.loggingUrl);
+  out.print(F("gprs-apn="));
+  out.println(config.gprsApn);
+  out.print(F("gprs-user="));
+  out.println(config.gprsUser);
+  out.print(F("gprs-pass="));
+  out.println(config.gprsPass);
 
   out.println(F("\n[sensors]"));
   for(int i = 0; i < config.sensorCount; i++) {

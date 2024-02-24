@@ -33,11 +33,15 @@ void logger_loop(void) {
 
   dataString += timestamp;
 
+  // Read values into an array in case we log remote
+  // We need enough room for sensors plus battery
+  float values[config.sensorCount + 1];
+
   // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 4.3V):
   int sensorValue = analogRead(ADC_BATTERY);
-  float voltage = sensorValue * (4.3 / 1023.0);
+  values[0] = sensorValue * (4.3 / 1023.0);
   dataString += "\t";
-  dataString += String(voltage);
+  dataString += String(values[0]);
 
   // Read sensors
   sensors.requestTemperatures();
@@ -46,11 +50,18 @@ void logger_loop(void) {
 
     stringToAddress(sensor->address, addr);
     float t = sensors.getTempF(addr);
+
+    // Scale values based on calibration points
+    t = ((t - sensor->zeroPoint) / (sensor->boilPoint - sensor->zeroPoint)) * 100.0f;
+    values[i + 1] = t;
+
     dataString += "\t";
     dataString += String(t, 4);
   }
 
   writeData(dataString);
+  if(config.remoteLogging) sendDataToRemote(values);
+
 
 loop:
   digitalWrite(LED_BUILTIN, LOW);
@@ -63,9 +74,11 @@ loop:
     Serial.flush();
     delay(d);
   } else {
-   //USBDevice.detach();
-   USBDevice.standby();
-   LowPower.deepSleep(d);
+    // Set all D pins to pullup to save power
+    for (int i=0; i < 15; i++) pinMode(i, INPUT_PULLUP);
+    USBDevice.detach();
+    //USBDevice.standby();
+    LowPower.deepSleep(d);
   }
 }
 
