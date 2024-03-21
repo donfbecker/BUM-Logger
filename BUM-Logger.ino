@@ -40,8 +40,9 @@ const char *CONFIG_FILE = "station.cfg";
 // SD card settings
 const int chipSelect = SDCARD_SS_PIN;
 
-const int configPin = A0;
-const int debugPin  = A1;
+const int configPin   = A0;
+const int debugPin    = A1;
+const int battery2Pin = A2;
 
 int configPinValue  = 0;
 int debugPinValue   = 0;
@@ -176,7 +177,7 @@ void dumpConfig(Stream &out) {
   out.print(F("interval="));
   out.println(config.interval);
   out.print(F("sensors="));
-  out.println(config.sensorCount);
+  out.println(config.sensors.size());
   out.print(F("remote-logging="));
   out.println(config.remoteLogging);
 
@@ -191,7 +192,7 @@ void dumpConfig(Stream &out) {
   out.println(config.gprsPass);
 
   out.println(F("\n[sensors]"));
-  for(int i = 0; i < config.sensorCount; i++) {
+  for(int i = 0; i < config.sensors.size(); i++) {
     SensorConfig *s = config.sensors.get(i);
     out.print(F("sensor"));
     out.print(i + 1);
@@ -200,7 +201,7 @@ void dumpConfig(Stream &out) {
   }
 
   // Have to loop twice to output things in the right order
-  for(int i = 0; i < config.sensorCount; i++) {
+  for(int i = 0; i < config.sensors.size(); i++) {
     SensorConfig *s = config.sensors.get(i);
 
     out.print(F("\n["));

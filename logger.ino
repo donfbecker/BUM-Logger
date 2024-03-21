@@ -17,12 +17,14 @@ void logger_loop(void) {
   // Get timestamp immediately
   updateTimestamp();
 
+  //if(config.remoteLogging) turnModemOn();
+
   String dataString = "";
 
   // Do we need to attach a header?
   bool needHeader = !SD.exists(DATA_FILE);
   if(needHeader) {
-    dataString += "Time\tBattery V";
+    dataString += "Time\tBattery 1\tBattery 2";
     for(int i = 0; i < config.sensorCount; i++) {
       SensorConfig *sensor = config.sensors.get(i);
       dataString += "\t";
@@ -43,6 +45,11 @@ void logger_loop(void) {
   dataString += "\t";
   dataString += String(values[0]);
 
+  sensorValue = analogRead(battery2Pin);
+  values[1] = sensorValue * (4.3 / 1023.0);
+  dataString += "\t";
+  dataString += String(values[1]);
+
   // Read sensors
   sensors.requestTemperatures();
   for (int i = 0; i < config.sensorCount; i++) {
@@ -53,14 +60,18 @@ void logger_loop(void) {
 
     // Scale values based on calibration points
     t = ((t - sensor->zeroPoint) / (sensor->boilPoint - sensor->zeroPoint)) * 100.0f;
-    values[i + 1] = t;
+    values[i + 2] = t;
 
     dataString += "\t";
     dataString += String(t, 4);
   }
 
   writeData(dataString);
-  if(config.remoteLogging) sendDataToRemote(values);
+  if(config.remoteLogging) {
+    sendDataToRemote(values);
+    //sendData(values);
+    //turnModemOff();
+  }
 
 
 loop:
@@ -75,7 +86,9 @@ loop:
     delay(d);
   } else {
     // Set all D pins to pullup to save power
-    for (int i=0; i < 15; i++) pinMode(i, INPUT_PULLUP);
+    // Don't change pins 13 and 14
+    for (int i=0; i < 13; i++) pinMode(i, INPUT_PULLUP);
+    pinMode(15, INPUT_PULLUP);
     USBDevice.detach();
     //USBDevice.standby();
     LowPower.deepSleep(d);

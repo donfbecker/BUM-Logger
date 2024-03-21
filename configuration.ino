@@ -113,7 +113,7 @@ int cmd_setInterval(int argc, char **argv) {
 }
 
 int cmd_getSensors(int argc, char **argv) {
-  for(int i = 0; i < config.sensorCount; i++) {
+  for(int i = 0; i < config.sensors.size(); i++) {
     SensorConfig *sensor = config.sensors.get(i);
     if(sensor != NULL) {
       shell.print(i + 1);
@@ -193,7 +193,7 @@ int cmd_setBoilPoint(int argc, char **argv) {
 int cmd_calibrateZeroPoints(int argc, char **argv) {
   shell.println(F("Reading temperatures..."));
   sensors.requestTemperatures();
-  for(int i = 0; i < config.sensorCount; i++) {
+  for(int i = 0; i < config.sensors.size(); i++) {
     SensorConfig *sensor = config.sensors.get(i);
     stringToAddress(sensor->address, addr);
     sensor->zeroPoint = sensors.getTempC(addr);
@@ -206,7 +206,7 @@ int cmd_calibrateZeroPoints(int argc, char **argv) {
 int cmd_calibrateBoilPoints(int argc, char **argv) {
   shell.println(F("Reading temperatures..."));
   sensors.requestTemperatures();
-  for(int i = 0; i < config.sensorCount; i++) {
+  for(int i = 0; i < config.sensors.size(); i++) {
     SensorConfig *sensor = config.sensors.get(i);
     stringToAddress(sensor->address, addr);
     sensor->boilPoint = sensors.getTempC(addr);
@@ -268,6 +268,7 @@ int cmd_removeSensor(int argc, char **argv) {
   INDEX_FROM_ADDRESS(index, argv[1]);
 
   config.sensors.remove(index);
+  config.sensorCount = config.sensors.size();
 
   shell.print(argv[1]);
   shell.println(F(" removed from configuration."));

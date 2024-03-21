@@ -5,10 +5,13 @@
 #include <ArduinoJson.h>
 
 // Modem HW Pins
-#define MODEM_PWR_ON_PIN    20
+#define MODEM_ENABLE_PIN    20
 #define MODEM_ON_PIN        6
 
 // Initialize GSM modem
+//#include <StreamDebugger.h>
+//StreamDebugger debugger(serialGSM, Serial);
+//TinyGsm modem(debugger);
 TinyGsm modem(serialGSM);
 
 // Initialize GSM client
@@ -32,13 +35,15 @@ void sendDataToRemote(float *values) {
 
 void turnModemOn() {
   // Turn modem on
-  pinMode(MODEM_PWR_ON_PIN, OUTPUT);
+  pinMode(MODEM_ENABLE_PIN, OUTPUT);
   pinMode(MODEM_ON_PIN, OUTPUT);
-  digitalWrite(MODEM_PWR_ON_PIN, HIGH);
-  digitalWrite(MODEM_ON_PIN, HIGH);
 
-  delay(100);
+  digitalWrite(MODEM_ENABLE_PIN, HIGH);
+  digitalWrite(MODEM_ON_PIN, HIGH);
+  delay(1000);
   digitalWrite(MODEM_ON_PIN, LOW);
+
+  Serial.println("Modem should be on.");
 }
 
 void turnModemOff() {
@@ -47,8 +52,10 @@ void turnModemOff() {
   modem.poweroff();
 
    // turn modem off
-  digitalWrite(MODEM_PWR_ON_PIN, LOW);
+  digitalWrite(MODEM_ON_PIN, HIGH);
+  delay(1000);
   digitalWrite(MODEM_ON_PIN, LOW);
+  digitalWrite(MODEM_ENABLE_PIN, LOW);
 }
 
 void sendData(float *values) {
@@ -59,7 +66,8 @@ void sendData(float *values) {
   }
 
   // Conntect to GSM Network
-   if (!modem.isNetworkConnected()) {
+  Serial.println("Connecting to GSM.");
+  if (!modem.isNetworkConnected()) {
     if (!modem.waitForNetwork(10000)) {
       Serial.println("Could not connect to GSM network.");
       return;
@@ -88,10 +96,11 @@ void sendData(float *values) {
   // Build request
   DynamicJsonDocument jsonbuf(1024);
   jsonbuf["Station"] = config.name;
-  jsonbuf["Battery V"] = values[0];
+  jsonbuf["Battery 1"] = values[0];
+  jsonbuf["Battery 2"] = values[1];
   for(int i = 0; i < config.sensorCount; i++) {
     SensorConfig *sensor = config.sensors.get(i);
-    jsonbuf[sensor->label] = values[i + 1];
+    jsonbuf[sensor->label] = values[i + 2];
   }
 
   String jsonstr = "";
