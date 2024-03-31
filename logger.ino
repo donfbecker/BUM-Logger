@@ -1,5 +1,7 @@
 const char *DATA_FILE = "data.log";
 
+#define LUX_ADDRESS 0x23
+
 void logger_setup() {
 }
 
@@ -24,7 +26,7 @@ void logger_loop(void) {
   // Do we need to attach a header?
   bool needHeader = !SD.exists(DATA_FILE);
   if(needHeader) {
-    dataString += "Time\tBattery 1\tBattery 2";
+    dataString += "Time\tBattery 1\tBattery 2\tLux";
     for(int i = 0; i < config.sensorCount; i++) {
       SensorConfig *sensor = config.sensors.get(i);
       dataString += "\t";
@@ -50,6 +52,10 @@ void logger_loop(void) {
   dataString += "\t";
   dataString += String(values[1]);
 
+  values[2] = readLuxSensor();
+  dataString += "\t";
+  dataString += String(values[2]);
+
   // Read sensors
   sensors.requestTemperatures();
   for (int i = 0; i < config.sensorCount; i++) {
@@ -60,7 +66,7 @@ void logger_loop(void) {
 
     // Scale values based on calibration points
     t = ((t - sensor->zeroPoint) / (sensor->boilPoint - sensor->zeroPoint)) * 100.0f;
-    values[i + 2] = t;
+    values[i + 3] = t;
 
     dataString += "\t";
     dataString += String(t, 4);
@@ -86,8 +92,8 @@ loop:
     delay(d);
   } else {
     // Set all D pins to pullup to save power
-    // Don't change pins 13 and 14
-    for (int i=0; i < 13; i++) pinMode(i, INPUT_PULLUP);
+    // Don't change pins 11, 12, 13 or 14
+    for (int i=0; i < 11; i++) pinMode(i, INPUT_PULLUP);
     pinMode(15, INPUT_PULLUP);
     USBDevice.detach();
     //USBDevice.standby();
@@ -105,4 +111,25 @@ void writeData(String dataString) {
   } else {
     Serial.println("Error opening data log file.");
   }
+}
+
+float readLuxSensor() {
+  uint8_t reg = 0x10;
+  uint8_t buf[4] = {0};
+  uint16_t data;
+
+  Wire.beginTransmission(LUX_ADDRESS);
+  Wire.write(&reg, 1);
+  if (Wire.endTransmission() != 0) {
+    return -1.0f;
+  }
+  delay(20);
+
+  Wire.requestFrom(LUX_ADDRESS, (uint8_t)2);
+  for (uint16_t i = 0; i < 2; i++) {
+    buf[i] = Wire.read();
+  }
+  
+  data = buf[0] << 8 | buf[1];
+  return (((float)data) / 1.2f);
 }

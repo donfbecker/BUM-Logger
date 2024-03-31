@@ -68,7 +68,7 @@ void sendData(float *values) {
   // Conntect to GSM Network
   Serial.println("Connecting to GSM.");
   if (!modem.isNetworkConnected()) {
-    if (!modem.waitForNetwork(10000)) {
+    if (!modem.waitForNetwork(config.gsmTimeout * 1000)) {
       Serial.println("Could not connect to GSM network.");
       return;
     }
@@ -98,9 +98,10 @@ void sendData(float *values) {
   jsonbuf["Station"] = config.name;
   jsonbuf["Battery 1"] = values[0];
   jsonbuf["Battery 2"] = values[1];
+  jsonbuf["Lux"]       = values[2];
   for(int i = 0; i < config.sensorCount; i++) {
     SensorConfig *sensor = config.sensors.get(i);
-    jsonbuf[sensor->label] = values[i + 2];
+    jsonbuf[sensor->label] = values[i + 3];
   }
 
   String jsonstr = "";

@@ -311,6 +311,21 @@ int cmd_disableRemote(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
+int cmd_getGSMTimeout(int argc, char **argv) {
+  shell.println(config.gsmTimeout);
+  return EXIT_SUCCESS;
+}
+
+int cmd_setGSMTimeout(int argc, char **argv) {
+  CHECK_ARGS(2, F("USAGE: setgsmtimeout [SECONDS]"));
+
+  config.gsmTimeout = atoi(argv[1]);
+
+  shell.print(F("OK "));
+  shell.println(config.gsmTimeout);
+  return EXIT_SUCCESS;
+}
+
 int cmd_getLoggingUrl(int argc, char **argv) {
   shell.println(config.loggingUrl);
   return EXIT_SUCCESS;
@@ -412,6 +427,9 @@ void configuration_setup() {
 
   shell.addCommand(F("getloggingurl \n\tReturns the remote logging url."), cmd_getLoggingUrl);
   shell.addCommand(F("setloggingurl [URL]\n\tSets the remote logging url."), cmd_setLoggingUrl);
+
+  shell.addCommand(F("getgsmtimeout \n\tReturns the GSM timeout value."), cmd_getGSMTimeout);
+  shell.addCommand(F("setgsmtimeout [SECONDS]\n\tSets the GSM timeout value in seconds."), cmd_setGSMTimeout);
 
   shell.addCommand(F("getgprsapn \n\tReturns the GPRS APN."), cmd_getGprsApn);
   shell.addCommand(F("setgprsapn [GPRS APN]\n\tSets GPRS APN."), cmd_setGprsApn);

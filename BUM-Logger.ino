@@ -9,6 +9,7 @@
 
 #include <ArduinoLowPower.h>
 #include <RTCZero.h>
+#include <Wire.h>
 
 #define MAX_VALUE_LEN 64
 #define MAX_URL_LEN 256
@@ -27,6 +28,7 @@ struct StationConfig {
   LinkedList<SensorConfig *> sensors;
 
   bool remoteLogging;
+  uint32_t gsmTimeout;
   char loggingUrl[MAX_URL_LEN];
   char gprsApn[MAX_VALUE_LEN];
   char gprsUser[MAX_VALUE_LEN];
@@ -67,9 +69,10 @@ void setup(void) {
 
   USBDevice.attach();
   Serial.begin(115200);
-  if(debugPinValue > 900 || configPinValue > 900) {
-    while(!Serial) {}
-  }
+  //if(debugPinValue > 900 || configPinValue > 900) {
+  //  while(!Serial) {}
+  //}
+  //while(!Serial.available()){}
 
   // Set GSM module baud rate
   serialGSM.begin(115200);
@@ -85,6 +88,9 @@ void setup(void) {
 
   // Start temperature sensors
   sensors.begin();
+
+  // Start i2c
+  Wire.begin();
 
   //Read configuration
   readConfig();
@@ -164,6 +170,7 @@ void readConfig() {
 
   // Remote logging configuration
   ini.getValue("station", "remote-logging", buffer, bufferLen, config.remoteLogging);
+  if(!ini.getValue("remote", "gsm-timeout", buffer, bufferLen, config.gsmTimeout)) config.gsmTimeout = 10;
   ini.getValue("remote", "url", config.loggingUrl, MAX_URL_LEN);
   ini.getValue("remote", "gprs-apn", config.gprsApn, MAX_VALUE_LEN);
   ini.getValue("remote", "gprs-user", config.gprsUser, MAX_VALUE_LEN);
@@ -182,6 +189,8 @@ void dumpConfig(Stream &out) {
   out.println(config.remoteLogging);
 
   out.println(F("\n[remote]"));
+  out.print(F("gsm-timeout="));
+  out.println(config.gsmTimeout);
   out.print(F("url="));
   out.println(config.loggingUrl);
   out.print(F("gprs-apn="));
