@@ -374,6 +374,20 @@ int cmd_setGprsPass(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
+int cmd_dumpLog(int argc, char **argv) {
+  File logFile = SD.open(F("DATA.LOG"), FILE_READ);
+  if(logFile) {
+    while (logFile.available()) {
+      shell.write(logFile.read());
+    }
+    logFile.close();
+    shell.println(F("\n."));
+  } else {
+    shell.println(F("."));
+  }
+  return EXIT_SUCCESS;
+}
+
 int cmd_config(int argc, char **argv) {
   shell.println(F("\n--------------------\n"));
   dumpConfig(shell);
@@ -439,6 +453,7 @@ void configuration_setup() {
   shell.addCommand(F("setgprspass [GPRS PASSWORD]\n\tSets GPRS password."), cmd_setGprsPass);
 
   shell.addCommand(F("config \n\tDump current configuration to shell."), cmd_config);
+  shell.addCommand(F("dumplog \n\tDump data log to shell."), cmd_dumpLog);
   shell.addCommand(F("save \n\tSaves the current configuration."), cmd_save);
   
   shell.println(F("\nBUM Logger Configuation Shell"));
